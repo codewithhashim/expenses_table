@@ -1,5 +1,4 @@
 <?php
-
 $con = mysqli_connect('localhost', 'root', '', 'income');
 if (isset($_POST['einnahme'])) {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -58,6 +57,23 @@ if (isset($_POST['einnahme'])) {
             border-color: #212529;
             background-color: #212529;
         }
+
+        .pagination li a {
+            position: relative;
+            display: block;
+            padding: .5rem .75rem;
+            margin-left: -1px;
+            line-height: 1.25;
+            color: #007bff;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+        }
+
+        .pagination li.active a{
+            color: white!important;
+            border-color: #212529;
+            background-color: #212529!important;
+        }
     </style>
 </head>
 
@@ -93,31 +109,56 @@ if (isset($_POST['einnahme'])) {
         </form>
         <hr class="mt-5">
         <?php
-    $sql = "SELECT * FROM expenses";
-    $result = mysqli_query($con, $sql);
-    ?>
+
+        // current page number
+        if (isset($_GET['page_no']) && $_GET['page_no'] != "") {
+            $page_no = $_GET['page_no'];
+        } else {
+            $page_no = 1;
+        }
+        $total_records_per_page = 10;
+        $offset = ($page_no - 1) * $total_records_per_page;
+        $previous_page = $page_no - 1;
+        $next_page = $page_no + 1;
+        $adjacents = "2";
+
+        $result_count = mysqli_query(
+            $con,
+            "SELECT COUNT(*) As total_records FROM `expenses`"
+        );
+        $total_records = mysqli_fetch_array($result_count);
+        $total_records = $total_records['total_records'];
+        $total_no_of_pages = ceil($total_records / $total_records_per_page);
+        $second_last = $total_no_of_pages - 1; // total pages minus 1
+        
+
+        // 10 is the limit
+        $sql = "SELECT * FROM `expenses` LIMIT $offset, $total_records_per_page";
+        $result = mysqli_query($con, $sql);
+
+        ?>
         <div>
             <div class="row pl-2">
-                <div class="col-sm text-success">Einnahmen: 
+                <div class="col-sm text-success">Einnahmen:
 
                     <?php
-                    $total = mysqli_query($con, 'SELECT SUM(betrag_green) AS value_sum FROM expenses'); 
-                    $row = mysqli_fetch_assoc($total); 
+                    $total = mysqli_query($con, 'SELECT SUM(betrag_green) AS value_sum FROM expenses');
+                    $row = mysqli_fetch_assoc($total);
                     $sum_green = $row['value_sum'];
                     echo ($sum_green . ',00 €');
                     ?>
 
                 </div>
-                <div class="col-sm text-danger">Ausgaben: 
+                <div class="col-sm text-danger">Ausgaben:
 
-                <?php
-                    $total = mysqli_query($con, 'SELECT SUM(betrag_red) AS value_sum FROM expenses'); 
-                    $row = mysqli_fetch_assoc($total); 
+                    <?php
+                    $total = mysqli_query($con, 'SELECT SUM(betrag_red) AS value_sum FROM expenses');
+                    $row = mysqli_fetch_assoc($total);
                     $sum_red = $row['value_sum'];
                     echo ($sum_red . ',00 €');
                     ?>
                 </div>
-                <div class="col-sm text-success">Stand: 
+                <div class="col-sm text-success">Stand:
                     <?php
                     echo ($sum_green - $sum_red . ',00 €');
                     ?>
@@ -126,65 +167,11 @@ if (isset($_POST['einnahme'])) {
         </div>
         <hr>
         <div class="mt-5">
-        <p class="pl-2"><strong><?php 
-        echo date('F Y'); 
-        ?></strong></p>
-            <table class="table table-striped" width="100%">
-                <thead>
-                    <tr>
-                    <th>Datum</th>
-                        <th>Titel</th>
-                        <th class="right">Einnahme</th>
-                        <th class="right">Ausgabe</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-            <?php
-        if ($result->num_rows > 0):
-            while ($row = $result->fetch_assoc()):
-        ?>
-            
-                        
-              
-                
-                    <tr>
-                        <td>
-                            <?php
-                echo $row["datum"];
-                            ?>
-                        </td>
-                        <td>
-                            <?php
-                echo $row["titel"];
-                        ?>
-                        </td>
-                        <td class="text-success right">
-                            <?php
-
-                echo $row["betrag_green"] . ',00';
-
-                            ?>
-                        </td>
-                        <td class="text-danger right">
-                            <?php
-
-                echo $row["betrag_red"] . ',00';
-
-                        ?>
-                        </td>
-                    </tr>
-    
-             
-           
-            <?php
-            endwhile;
-            ?>
-            <?php
-        endif;
-            ?>
-               </tbody>
-             </table>
-            <p class="pl-2 mt-5"><strong>Oktober 2021</strong></p>
+            <p class="pl-2"><strong>
+                    <?php
+                    echo date('F Y');
+                    ?>
+                </strong></p>
             <table class="table table-striped" width="100%">
                 <thead>
                     <tr>
@@ -195,61 +182,124 @@ if (isset($_POST['einnahme'])) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>05.10.2021</td>
-                        <td>Lebensmittel</td>
-                        <td class="text-success right"></td>
-                        <td class="text-danger right">50,53</td>
+                    <?php
+                    if ($result->num_rows > 0):
+                        while ($row = mysqli_fetch_array($result)):
+                    ?>
+     <tr>
+                        <td>
+                            <?php
+                            echo $row["datum"];
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            echo $row["titel"];
+                            ?>
+                        </td>
+                        <td class="text-success right">
+                            <?php
+
+                            echo $row["betrag_green"] . ',00';
+
+                            ?>
+                        </td>
+                        <td class="text-danger right">
+                            <?php
+
+                            echo $row["betrag_red"] . ',00';
+
+                            ?>
+                        </td>
                     </tr>
-                    <tr>
-                        <td>01.10.2021</td>
-                        <td>Lohn</td>
-                        <td class="text-success right">2000,00</td>
-                        <td class="text-danger right"></td>
-                    </tr>
-                    <tr>
-                        <td>01.10.2021</td>
-                        <td>Lohn</td>
-                        <td class="text-success right">2000,00</td>
-                        <td class="text-danger right"></td>
-                    </tr>
+
+
+
+                    <?php
+                        endwhile;
+                    ?>
+                    <?php
+                    endif;
+                    ?>
                 </tbody>
             </table>
-        </div>
-        <hr class="mt-3">
-        <nav aria-label="Page navigation example">
-            <ul class="pagination">
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="First">
-                        <span aria-hidden="true">&laquo;</span>
-                        <span class="sr-only">Previous</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Previous">
-                        <span aria-hidden="true">&lsaquo;</span>
-                        <span class="sr-only">Previous</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <div style='padding: 10px 20px 0px; border-top: dotted 1px #CCC;'>
+                <strong>Page
+                    <?php echo $page_no . " of " . $total_no_of_pages; ?>
+                </strong>
+            </div>
 
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&rsaquo;</span>
-                        <span class="sr-only">Next</span>
-                    </a>
+            <ul class="pagination">
+                <?php // if($page_no > 1){ echo "<li><a href='?page_no=1'>First Page</a></li>"; } ?>
+    
+	<li <?php if ($page_no <= 1) {
+        echo "class='disabled'";
+    } ?>>
+                <a <?php if ($page_no > 1) {                 echo "href='?page_no=$previous_page'";                } ?>>‹</a>
                 </li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Last">
-                        <span aria-hidden="true">&raquo;</span>
-                        <span class="sr-only">Last</span>
-                    </a>
+
+                <?php
+                if ($total_no_of_pages <= 10) {
+                    for ($counter = 1; $counter <= $total_no_of_pages; $counter++) {
+                        if ($counter == $page_no) {
+                            echo "<li class='active'><a>$counter</a></li>";
+                        } else {
+                            echo "<li><a href='?page_no=$counter'>$counter</a></li>";
+                        }
+                    }
+                } elseif ($total_no_of_pages > 10) {
+
+                    if ($page_no <= 4) {
+                        for ($counter = 1; $counter < 8; $counter++) {
+                            if ($counter == $page_no) {
+                                echo "<li class='active'><a>$counter</a></li>";
+                            } else {
+                                echo "<li><a href='?page_no=$counter'>$counter</a></li>";
+                            }
+                        }
+                        echo "<li><a>...</a></li>";
+                        echo "<li><a href='?page_no=$second_last'>$second_last</a></li>";
+                        echo "<li><a href='?page_no=$total_no_of_pages'>$total_no_of_pages</a></li>";
+                    } elseif ($page_no > 4 && $page_no < $total_no_of_pages - 4) {
+                        echo "<li><a href='?page_no=1'>1</a></li>";
+                        echo "<li><a href='?page_no=2'>2</a></li>";
+                        echo "<li><a>...</a></li>";
+                        for ($counter = $page_no - $adjacents; $counter <= $page_no + $adjacents; $counter++) {
+                            if ($counter == $page_no) {
+                                echo "<li class='active'><a>$counter</a></li>";
+                            } else {
+                                echo "<li><a href='?page_no=$counter'>$counter</a></li>";
+                            }
+                        }
+                        echo "<li><a>...</a></li>";
+                        echo "<li><a href='?page_no=$second_last'>$second_last</a></li>";
+                        echo "<li><a href='?page_no=$total_no_of_pages'>$total_no_of_pages</a></li>";
+                    } else {
+                        echo "<li><a href='?page_no=1'>1</a></li>";
+                        echo "<li><a href='?page_no=2'>2</a></li>";
+                        echo "<li><a>...</a></li>";
+
+                        for ($counter = $total_no_of_pages - 6; $counter <= $total_no_of_pages; $counter++) {
+                            if ($counter == $page_no) {
+                                echo "<li class='active'><a>$counter</a></li>";
+                            } else {
+                                echo "<li><a href='?page_no=$counter'>$counter</a></li>";
+                            }
+                        }
+                    }
+                }
+                ?>
+
+                <li <?php if ($page_no >= $total_no_of_pages) {                   echo "class='disabled'";             } ?>>
+                    <a <?php if ($page_no < $total_no_of_pages) {                 echo "href='?page_no=$next_page'";                 } ?>> › </a>
                 </li>
+                <?php if ($page_no < $total_no_of_pages) {
+                    echo "<li><a href='?page_no=$total_no_of_pages'>»</a></li>";
+                } ?>
             </ul>
-        </nav>
-    </div>
+
+
+
 </body>
 
 </html>
