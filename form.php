@@ -1,28 +1,38 @@
 <?php
-$con = mysqli_connect('localhost', 'root', '', 'income');
-if (isset($_POST['einnahme'])) {
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $datum = $_POST['datum'];
-        $titel = $_POST['titel'];
-        $betrag_green = $_POST['betrag'];
+class Connection {
 
+    function __construct() {
+        global $con;
+    $con = mysqli_connect('localhost', 'root', '', 'income');
+
+    if (isset($_POST['einnahme'])) {
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $datum = $_POST['datum'];
+            $titel = $_POST['titel'];
+            $betrag_green = $_POST['betrag'];
+    
+        }
+    
+        $sql = "INSERT INTO `expenses` (`datum`, `titel`, `betrag_green`) VALUES ('$datum', '$titel', '$betrag_green' ) ";
+        
+        $rs = mysqli_query($con, $sql);
+    
+    } elseif (isset($_POST['ausgabe'])) {
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $datum = $_POST['datum'];
+            $titel = $_POST['titel'];
+            $betrag_red = $_POST['betrag'];
+    
+        }
+    
+        $sql = "INSERT INTO `expenses` (`datum`, `titel`, `betrag_red`) VALUES ('$datum', '$titel', '$betrag_red' ) ";
+        $rs = mysqli_query($con, $sql);
+    
     }
-
-    $sql = "INSERT INTO `expenses` (`datum`, `titel`, `betrag_green`) VALUES ('$datum', '$titel', '$betrag_green' ) ";
-    $rs = mysqli_query($con, $sql);
-
-} elseif (isset($_POST['ausgabe'])) {
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $datum = $_POST['datum'];
-        $titel = $_POST['titel'];
-        $betrag_red = $_POST['betrag'];
-
     }
-
-    $sql = "INSERT INTO `expenses` (`datum`, `titel`, `betrag_red`) VALUES ('$datum', '$titel', '$betrag_red' ) ";
-    $rs = mysqli_query($con, $sql);
-
 }
+$obj = new Connection();
+
 
 ?>
 <!DOCTYPE html>
@@ -111,6 +121,7 @@ if (isset($_POST['einnahme'])) {
         <?php
 
         // current page number
+      
         if (isset($_GET['page_no']) && $_GET['page_no'] != "") {
             $page_no = $_GET['page_no'];
         } else {
@@ -122,10 +133,7 @@ if (isset($_POST['einnahme'])) {
         $next_page = $page_no + 1;
         $adjacents = "2";
 
-        $result_count = mysqli_query(
-            $con,
-            "SELECT COUNT(*) As total_records FROM `expenses`"
-        );
+        $result_count = mysqli_query($con, "SELECT COUNT(*) As total_records FROM `expenses`");
         $total_records = mysqli_fetch_array($result_count);
         $total_records = $total_records['total_records'];
         $total_no_of_pages = ceil($total_records / $total_records_per_page);
@@ -145,7 +153,7 @@ if (isset($_POST['einnahme'])) {
                     $total = mysqli_query($con, 'SELECT SUM(betrag_green) AS value_sum FROM expenses');
                     $row = mysqli_fetch_assoc($total);
                     $sum_green = $row['value_sum'];
-                    echo ($sum_green . ',00 €');
+                    echo number_format((float)$sum_green, 2, '.', '');
                     ?>
 
                 </div>
